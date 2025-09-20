@@ -1,0 +1,15 @@
+services:
+  parlertts-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./temp/hf_cache:/cache/huggingface
+      - ./temp/models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

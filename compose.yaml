@@ -1,0 +1,75 @@
+﻿services:
+  translationteacherwasm:
+    image: translationteacherwasm
+    build:
+      context: .
+      dockerfile: TranslationTeacherWasm/Dockerfile
+      
+  parlertts-api:
+    build:
+      context: .
+      dockerfile: ParlerTTSAPI/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app_models/hfcache:/cache/huggingface
+      - ./app_models/ggufs:/models
+
+  translation-llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    runtime: nvidia
+    pull_policy: always
+    init: true
+    ipc: host
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./app_models/ggufs:/models
+    command: |
+      --model /models/Hunyuan-MT-Chimera-7B.Q4_K_M.gguf
+      --top-k 20
+      --top-p 0.6
+      --repeat-penalty 1.05
+      --temp 0.7
+      --n-gpu-layers 0
+
+  assistant-llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    runtime: nvidia
+    pull_policy: always
+    init: true
+    ipc: host
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./app_models/ggufs:/models
+    command: |
+      --model /models/Qwen3-4B-UD-Q4_K_XL.gguf
+      --top-k 20
+      --top-p 0.8
+      --min-p 0
+      --temp 0.7
+      --n-gpu-layers 0
+      --chat_template_kwargs "{\"enable_thinking\":false}" 
+      
+  asr-service:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    volumes:
+      - ./app_models/hfcache:/root/.cache/
+    ports:
+      - "9000:9000"
+    environment:
+      - ASR_ENGINE=faster_whisper
+      - ASR_MODEL=large-v3-turbo
+  
+  download-models:
+    image: curlimages/curl:latest
+    volumes:
+      - ./app_models/ggufs:/models
+    command: |
+      sh -c "
+        curl --skip-existing -L -o /models/Qwen3-4B-UD-Q4_K_XL.gguf https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-UD-Q4_K_XL.gguf &&
+        curl --skip-existing -L -o /models/Hunyuan-MT-Chimera-7B.Q4_K_M.gguf https://huggingface.co/mradermacher/Hunyuan-MT-Chimera-7B-GGUF/resolve/main/Hunyuan-MT-Chimera-7B.Q4_K_M.gguf
+      "
+    user: "0:0"
+

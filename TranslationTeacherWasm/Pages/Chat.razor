@@ -1,0 +1,78 @@
+@using KristofferStrube.Blazor.WebIDL.Exceptions
+@using System.Text.Json.Serialization;
+@using KristofferStrube.Blazor.DOM
+@using KristofferStrube.Blazor.FileAPI
+@inject IMediaDevicesService MediaDevicesService
+@inject IJSRuntime JSRuntime
+
+<h3>Chat</h3>
+
+@if (error is not null)
+{
+    <code>@error</code>
+}
+else if (deviceLabel is not null)
+{
+    <p>We opened the media device with label: <b>@deviceLabel</b></p>
+}
+else
+{
+    <button @onclick="Open">Open Microphone MediaStream</button>
+}
+
+@code {
+    private string? deviceLabel;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    private async Task Open()
+    {
+        try
+        {
+            MediaDevices mediaDevices = await MediaDevicesService.GetMediaDevicesAsync();
+            MediaStream mediaStream = await mediaDevices.GetUserMediaAsync(new MediaStreamConstraints() { Video = false, Audio = true });
+
+            // List to collect each recording part.
+            List<Blob> blobsRecorded = new();
+
+            // Create new MediaRecorder from some existing MediaStream.
+            await using MediaRecorder recorder = await MediaRecorder.CreateAsync(JSRuntime, mediaStream);
+
+            // Add event listener for when each data part is available.
+            await using var dataAvailableEventListener =
+                await EventListener<BlobEvent>.CreateAsync(JSRuntime, async (BlobEvent e) =>
+                {
+                    Blob blob = await e.GetDataAsync();
+                    blobsRecorded.Add(blob);
+                });
+            await recorder.AddOnDataAvailableEventListenerAsync(dataAvailableEventListener);
+
+            // Starts Recording
+            await recorder.StartAsync();
+
+            // Records for 5 seconds.
+            await Task.Delay(5000);
+
+            // Stops recording
+            await recorder.StopAsync();
+
+            // Combines and collects the total audio data.
+            Blob combinedBlob = await Blob.CreateAsync(JSRuntime, [.. blobsRecorded]);
+            byte[] audioData = await combinedBlob.ArrayBufferAsync();
+            
+            await combinedBlob.JSReference.DisposeAsync();
+
+            // Dispose of blob parts created while recording.
+            foreach (Blob blob in blobsRecorded)
+                await blob.JSReference.DisposeAsync();
+        }
+        catch (WebIDLException ex)
+        {
+            error = $"{ex.GetType().Name}: {ex.Message}";
+        }
+    }
+
+}

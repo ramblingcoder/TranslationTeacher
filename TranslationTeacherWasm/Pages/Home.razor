@@ -1,0 +1,50 @@
+﻿@page "/"
+@using KristofferStrube.Blazor.WebIDL.Exceptions
+@inject IMediaDevicesService MediaDevicesService;
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@if (error is not null)
+{
+    <code>@error</code>
+}
+else if (deviceLabel is not null)
+{
+    <p>We opened the media device with label: <b>@deviceLabel</b></p>
+}
+else
+{
+    <button @onclick="Open">Open Microphone MediaStream</button>
+}
+
+@code {
+    private string? deviceLabel;
+    private string? error;
+
+    private async Task Open()
+    {
+        try
+        {
+            MediaDevices mediaDevices = await MediaDevicesService.GetMediaDevicesAsync();
+            MediaStream mediaStream = await mediaDevices.GetUserMediaAsync(new MediaStreamConstraints() { Video = true });
+
+            MediaStreamTrack[] videoTracks = await mediaStream.GetVideoTracksAsync();
+            MediaStreamTrack firstVideoTrack = videoTracks.First();
+
+            MediaTrackCapabilities capabilities = await firstVideoTrack.GetCapabilitiesAsync();
+            await firstVideoTrack.ApplyContraintsAsync(new MediaTrackConstraints()
+            {
+                Height = capabilities.Height?.Max,
+                Width = capabilities.Width?.Max
+            });
+        }
+        catch (WebIDLException ex)
+        {
+            error = $"{ex.GetType().Name}: {ex.Message}";
+        }
+    }
+}
