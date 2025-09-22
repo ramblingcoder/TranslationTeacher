@@ -10,6 +10,9 @@ namespace TranslationTeacherWasm.Pages;
 
 public partial class Chat
 {
+    private string status = "Idle";
+    private string spokenAudioTranscribed = null;
+    
     private string? error;
     private MediaStream? mediaStream;
     private readonly List<(string label, string id)> audioOptions = [];
@@ -19,7 +22,7 @@ public partial class Chat
 
     private MediaRecorder? recorder;
     private EventListener<BlobEvent>? dataAvailableEventListener;
-    private string combinedBlobURL = "";
+    private byte[] spokenAudio;
     private AudioBuffer? audioBuffer;
     private readonly List<Blob> blobsRecorded = [];
     private AudioContext? context;
@@ -62,6 +65,8 @@ public partial class Chat
             liveSourceNoce = await context.CreateMediaStreamSourceAsync(mediaStream);
             liveAnalyzer = await AnalyserNode.CreateAsync(JSRuntime, context);
             await liveSourceNoce.ConnectAsync(liveAnalyzer);
+
+            await StartRecording();
         }
         catch (WebIDLException ex)
         {
@@ -75,6 +80,8 @@ public partial class Chat
         {
             return;
         }
+
+        status = "Listening";
 
         try
         {
@@ -123,16 +130,16 @@ public partial class Chat
                 await recorder.DisposeAsync();
 
                 await using Blob combinedBlob = await Blob.CreateAsync(JSRuntime, [.. blobsRecorded], new() { Type = await blobsRecorded.First().GetTypeAsync() });
-                combinedBlobURL = await URLService.CreateObjectURLAsync(combinedBlob);
 
                 foreach (Blob blob in blobsRecorded)
                 {
                     await blob.DisposeAsync();
                 }
 
-                byte[] audioData = await combinedBlob.ArrayBufferAsync();
-
-                audioBuffer = await context.DecodeAudioDataAsync(audioData);
+                spokenAudio = await combinedBlob.ArrayBufferAsync();
+                audioBuffer = await context.DecodeAudioDataAsync(spokenAudio);
+                spokenAudioTranscribed = (await WhisperApiClient.TranscribeAsync(spokenAudio, language:"en"));
+                
                 StateHasChanged();
             });
             await recorder.AddOnStopEventListenerAsync(stopEventListener);
@@ -222,10 +229,6 @@ public partial class Chat
         if (audioSourceNode is not null)
         {
             await audioSourceNode.StopAsync();
-        }
-        if (combinedBlobURL is not "")
-        {
-            await URLService.RevokeObjectURLAsync(combinedBlobURL);
         }
     }
 
