@@ -8,8 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Excubo.Blazor.Canvas" Version="3.2.91" />
         <PackageReference Include="KristofferStrube.Blazor.MediaCaptureStreams" Version="0.4.0" />
         <PackageReference Include="KristofferStrube.Blazor.MediaStreamRecording" Version="0.1.0-alpha.2" />
+        <PackageReference Include="KristofferStrube.Blazor.WebAudio" Version="0.1.0-alpha.13" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
     </ItemGroup>

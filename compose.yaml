@@ -1,6 +1,6 @@
 ﻿services:
   translationteacherwasm:
-    image: translationteacherwasm
+#    image: translationteacherwasm
     build:
       context: .
       dockerfile: TranslationTeacherWasm/Dockerfile

@@ -1,3 +1,4 @@
+using KristofferStrube.Blazor.FileAPI;
 using KristofferStrube.Blazor.MediaCaptureStreams;
 using KristofferStrube.Blazor.WebIDL;
 using Microsoft.AspNetCore.Components.Web;
@@ -17,6 +18,8 @@ public class Program
 
         // Adding IMediaDevicesService to service collection.
         builder.Services.AddMediaDevicesService();
+        
+        builder.Services.AddURLService();
 
         var app = builder.Build();
 

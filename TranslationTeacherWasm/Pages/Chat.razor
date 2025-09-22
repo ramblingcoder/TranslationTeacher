@@ -1,78 +1,98 @@
-@using KristofferStrube.Blazor.WebIDL.Exceptions
-@using System.Text.Json.Serialization;
+@page "/Chat"
+
 @using KristofferStrube.Blazor.DOM
 @using KristofferStrube.Blazor.FileAPI
-@inject IMediaDevicesService MediaDevicesService
+@using KristofferStrube.Blazor.MediaCaptureStreams
+@using KristofferStrube.Blazor.WebAudio
+@using KristofferStrube.Blazor.WebIDL.Exceptions
+@using TranslationTeacherWasm.Shared
 @inject IJSRuntime JSRuntime
+@inject IMediaDevicesService MediaDevicesService
+@inject IURLService URLService
+@implements IAsyncDisposable
 
 <h3>Chat</h3>
+
+<PageTitle>Blazor.MediaStreamRecording - Audio Recording</PageTitle>
+
+<h2>
+    Audio Recording
+</h2>
+<p>
+    In this demo you can record some audio and replay it or download it.
+</p>
 
 @if (error is not null)
 {
     <code>@error</code>
 }
-else if (deviceLabel is not null)
+else if (mediaStream is null)
 {
-    <p>We opened the media device with label: <b>@deviceLabel</b></p>
+    <button class="btn btn-success" @onclick=OpenAudioStream>Open Microphone</button>
+}
+else if (recorder is null)
+{
+    <svg class="bi" viewBox="0 0 16 16" height="60">
+        <g @onclick="StartRecording" style="cursor:pointer">
+            <title>Start Recording</title>
+            <circle stroke="black" stroke-width="0" fill="#B61C1C" cx="8" cy="4" r="2"></circle>
+            <circle stroke="black" stroke-width="0" fill="#B61C1C" cx="8" cy="8" r="2"></circle>
+            <rect stroke="black" stroke-width="0" fill="#B61C1C" x="6" y="4" width="4" height="4"></rect>
+            <path stroke="#B61C1C" stroke-width="1.5" fill="none" d="M 4 8 C 4 13 12 13 12 8" stroke-linecap="round"></path>
+            <line stroke="#B61C1C" stroke-width="1.5" x1="8" y1="13" x2="8" y2="12" stroke-linecap="round"></line>
+            <circle stroke="#B61C1C" stroke-width="1" fill="transparent" cx="8" cy="8" r="7"></circle>
+        </g>
+    </svg>
+    <AmplitudePlot Analyser="liveAnalyzer" />
+    <br />
+    @if (audioOptions.Count > 0)
+    {
+        <label for="audioSource">Audio Source</label>
+        <select id="audioSource" @bind=selectedAudioSource @bind:after="OpenAudioStream">
+            @foreach (var option in audioOptions)
+            {
+                <option value="@option.id" selected="@(option.id == selectedAudioSource)">@option.label</option>
+            }
+        </select>
+    }
+}
+else if (audioBuffer is null)
+{
+    <svg class="bi" viewBox="0 0 16 16" height="60">
+        <g @onclick="StopRecording" style="cursor:pointer">
+            <title>Stop Recording</title>
+            <circle stroke="#212121" stroke-width="1" fill="transparent" cx="8" cy="8" r="7"></circle>
+            <rect stroke="#212121" stroke-width="1" fill="#212121" x="9" y="4" width="2" height="8" stroke-linejoin="round" stroke-linecap="round"></rect>
+            <rect stroke="#212121" stroke-width="1" fill="#212121" x="5" y="4" width="2" height="8" stroke-linejoin="round" stroke-linecap="round"></rect>
+        </g>
+    </svg>
+    <AmplitudePlot Analyser="liveAnalyzer" Color="#F00" />
+}
+else if (audioSourceNode is null)
+{
+    <svg class="bi" viewBox="0 0 16 16" height="60">
+        <g @onclick="PlayRecording" style="cursor:pointer">
+            <title>Play Recording</title>
+            <circle stroke="#B61C1C" stroke-width="1" fill="transparent" cx="8" cy="8" r="7"></circle>
+            <polygon stroke="#B61C1C" stroke-width="1" fill="#B61C1C" points="6,4 12,8 6,12" stroke-linecap="round" stroke-linejoin="round"></polygon>
+        </g>
+    </svg>
+    <br />
+    <a href="@combinedBlobURL" target="_blank" download>Download</a>
 }
 else
 {
-    <button @onclick="Open">Open Microphone MediaStream</button>
-}
-
-@code {
-    private string? deviceLabel;
-    private string? error;
-
-    protected override async Task OnInitializedAsync()
-    {
-    }
-
-    private async Task Open()
-    {
-        try
-        {
-            MediaDevices mediaDevices = await MediaDevicesService.GetMediaDevicesAsync();
-            MediaStream mediaStream = await mediaDevices.GetUserMediaAsync(new MediaStreamConstraints() { Video = false, Audio = true });
-
-            // List to collect each recording part.
-            List<Blob> blobsRecorded = new();
-
-            // Create new MediaRecorder from some existing MediaStream.
-            await using MediaRecorder recorder = await MediaRecorder.CreateAsync(JSRuntime, mediaStream);
-
-            // Add event listener for when each data part is available.
-            await using var dataAvailableEventListener =
-                await EventListener<BlobEvent>.CreateAsync(JSRuntime, async (BlobEvent e) =>
-                {
-                    Blob blob = await e.GetDataAsync();
-                    blobsRecorded.Add(blob);
-                });
-            await recorder.AddOnDataAvailableEventListenerAsync(dataAvailableEventListener);
-
-            // Starts Recording
-            await recorder.StartAsync();
-
-            // Records for 5 seconds.
-            await Task.Delay(5000);
-
-            // Stops recording
-            await recorder.StopAsync();
-
-            // Combines and collects the total audio data.
-            Blob combinedBlob = await Blob.CreateAsync(JSRuntime, [.. blobsRecorded]);
-            byte[] audioData = await combinedBlob.ArrayBufferAsync();
-            
-            await combinedBlob.JSReference.DisposeAsync();
-
-            // Dispose of blob parts created while recording.
-            foreach (Blob blob in blobsRecorded)
-                await blob.JSReference.DisposeAsync();
-        }
-        catch (WebIDLException ex)
-        {
-            error = $"{ex.GetType().Name}: {ex.Message}";
-        }
-    }
-
+    <svg class="bi" viewBox="0 0 16 16" height="60">
+        <g @onclick="StopPlayingRecording" style="cursor:pointer">
+            <title>
+                Stop Playing Recording
+            </title>
+            <circle stroke="#B61C1C" stroke-width="1" fill="transparent" cx="8" cy="8" r="7"></circle>
+            <rect stroke="#B61C1C" stroke-width="1" fill="#B61C1C" x="5" y="5" width="6" height="6" stroke-linejoin="round"></rect>
+        </g>
+    </svg>
+    <br />
+    <a href="@combinedBlobURL" target="_blank" download>Download</a>
+    <br />
+    <AmplitudePlot @ref=plot Analyser="bufferAnalyzer" />
 }
