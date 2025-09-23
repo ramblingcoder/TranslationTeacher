@@ -14,11 +14,15 @@
         <PackageReference Include="KristofferStrube.Blazor.WebAudio" Version="0.1.0-alpha.13" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.65.0" />
     </ItemGroup>
 
     <ItemGroup>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
+      </Content>
+      <Content Update="wwwroot\appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
 

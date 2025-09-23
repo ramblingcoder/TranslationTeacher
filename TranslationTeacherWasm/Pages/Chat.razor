@@ -5,17 +5,34 @@
 @using KristofferStrube.Blazor.MediaCaptureStreams
 @using KristofferStrube.Blazor.WebAudio
 @using KristofferStrube.Blazor.WebIDL.Exceptions
+@using Microsoft.SemanticKernel.ChatCompletion
+@using OpenAI.Chat
 @using TranslationTeacherWasm.Shared
 @inject IJSRuntime JSRuntime
 @inject IMediaDevicesService MediaDevicesService
 @inject IURLService URLService
 @inject WhisperApiClient WhisperApiClient
+@inject IConfiguration Configuration
+@inject ParlerApiClient ParlerApiClient
 @implements IAsyncDisposable
 
 <h3>Chat</h3>
 
-<b>Current Status: @(status)</b>
-<b>Spoken Audio Text: @(spokenAudioTranscribed)</b>
+<b>Current Status: @(status)</b><br/>
+<b>Selected Language: @(selectedLanguage)</b><br/>
+<b>Spoken Audio Text: @(spokenAudioTranscribed)</b><br/>
+<b>Translated Spoken Text To English: @(userTranslatedToEnglish)</b><br/>
+<b>NPC Response Text: @(responseText)</b><br/>
+<b>NPC Response Translated To @(selectedLanguage): @(npcTranslatedToLanguage)</b><br/>
+<br/>
+
+<label for="languageSelect">Select Language:</label>
+<select id="languageSelect" @bind=selectedLanguage>
+    <option value="es,spanish">Spanish</option>
+    <option value="fr,french">French</option>
+</select>
+
+<br/>
 
 @if (error is not null)
 {
@@ -63,17 +80,7 @@ else if (audioBuffer is null)
     </svg>
     <AmplitudePlot Analyser="liveAnalyzer" Color="#F00" />
 }
-else if (audioSourceNode is null)
-{
-    <svg class="bi" viewBox="0 0 16 16" height="60">
-        <g @onclick="PlayRecording" style="cursor:pointer">
-            <title>Play Recording</title>
-            <circle stroke="#B61C1C" stroke-width="1" fill="transparent" cx="8" cy="8" r="7"></circle>
-            <polygon stroke="#B61C1C" stroke-width="1" fill="#B61C1C" points="6,4 12,8 6,12" stroke-linecap="round" stroke-linejoin="round"></polygon>
-        </g>
-    </svg>
-}
-else
+else if (npcSpokenResponse != null)
 {
     <svg class="bi" viewBox="0 0 16 16" height="60">
         <g @onclick="StopPlayingRecording" style="cursor:pointer">
