@@ -1,4 +1,4 @@
-# Translator Teacher
+# Translation Teacher
 
 ## Configuration Options
 
