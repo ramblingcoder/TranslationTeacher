@@ -12,6 +12,11 @@ Options with samples.
   "NpcPrompt": "/no_think\nYou are an NPC.\nYou are responding to the user's message in the first person.\nYour response should be in english. Response with simple statements and questions. Respond in a way that continues the conversation."
 }
 ```
+### Environment Variables
+* WhisperApiUrl = http://nginx-asr:9000
+* ParlerApiUrl = http://parlertts-api:8000
+* NpcApiUrl = http://assistant-llamacpp:8082
+* TranslatorApiUrl = http://assistant-llamacpp:8081
 
 ## Endpoints
 
