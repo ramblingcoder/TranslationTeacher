@@ -4,6 +4,14 @@
     build:
       context: .
       dockerfile: TranslationTeacherWasm/Dockerfile
+    ports:
+      - "8083:80"
+    environment:
+      - WhisperApiUrl=http://nginx-asr:9000
+      - ParlerApiUrl=http://parlertts-api:8000
+      - NpcApiUrl=http://assistant-llamacpp:8082
+      - TranslatorApiUrl=http://assistant-llamacpp:8081
+    restart: unless-stopped
       
   parlertts-api:
     build:
@@ -14,6 +22,7 @@
     volumes:
       - ./app_models/hfcache:/cache/huggingface
       - ./app_models/ggufs:/models
+    restart: unless-stopped
 
   translation-llamacpp:
     image: ghcr.io/ggml-org/llama.cpp:server
@@ -32,6 +41,7 @@
       --repeat-penalty 1.05
       --temp 0.7
       --n-gpu-layers 0
+    restart: unless-stopped
 
   assistant-llamacpp:
     image: ghcr.io/ggml-org/llama.cpp:server
@@ -51,7 +61,7 @@
       --temp 0.7
       --n-gpu-layers 0
       --chat_template_kwargs "{\"enable_thinking\":false}" 
-      
+    restart: unless-stopped      
   
   download-models:
     image: curlimages/curl:latest
@@ -73,8 +83,7 @@
     environment:
       - ASR_ENGINE=faster_whisper
       - ASR_MODEL=large-v3-turbo
-    networks:
-      - asr-net
+    restart: unless-stopped
 
   nginx-asr:
     image: nginx:alpine
@@ -86,11 +95,6 @@
       - source: nginx_config_asr
         target: /etc/nginx/conf.d/default.conf
     restart: unless-stopped
-    networks:
-      - asr-net
-
-networks:
-  asr-net:
 
 configs:
   nginx_config_asr:
