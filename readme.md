@@ -21,4 +21,4 @@ Options with samples.
 * http://localhost:8000/docs - Parler TTS - Text to Speech
 
 ## Sample Video of Usage
-[output.webm](https://github.com/user-attachments/assets/8f74fa59-ddf9-487f-909b-60caa513aa94)
+https://github.com/user-attachments/assets/102772b4-c8ab-4dc7-a372-fdaa1a7f0f0e
