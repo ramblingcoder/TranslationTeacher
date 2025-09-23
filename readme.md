@@ -19,3 +19,6 @@ Options with samples.
 * http://localhost:8082 - Qwen 3 4B - LLM - Acts as the NPC
 * http://localhost:8081 - Hunyuan MT Chimera 7B - LLM - Translations
 * http://localhost:8000/docs - Parler TTS - Text to Speech
+
+## Sample Video of Usage
+[output.webm](https://github.com/user-attachments/assets/8f74fa59-ddf9-487f-909b-60caa513aa94)
