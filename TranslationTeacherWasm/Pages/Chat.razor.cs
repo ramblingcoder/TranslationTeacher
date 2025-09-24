@@ -29,6 +29,7 @@ public partial class Chat
     private string responseText = null;
     private string selectedLanguage = "es,spanish";
     private bool generateSpeech = true;
+    private bool pipelineComplete = false;
     private AudioBuffer npcSpokenResponse;
     private ChatHistory ChatHistory = new ChatHistory();
     private AudioBufferSourceNode currentAudioBufferNode = default!;
@@ -141,7 +142,8 @@ public partial class Chat
                     userTranslatedToEnglish = "";
                     responseText = "";
                     npcTranslatedToLanguage = "";
-                    
+                    pipelineComplete = false;
+
                     MediaStreamTrack[] audioTracks = await mediaStream.GetAudioTracksAsync();
                     foreach (MediaStreamTrack track in audioTracks)
                     {
@@ -243,6 +245,10 @@ public partial class Chat
                 catch (Exception e)
                 {
                     error = e.ToString();
+                }
+                finally
+                {
+                    pipelineComplete = true;
                 }
             });
             await recorder.AddOnStopEventListenerAsync(stopEventListener);

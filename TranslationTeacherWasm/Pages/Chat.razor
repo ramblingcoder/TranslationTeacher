@@ -98,7 +98,7 @@ else if (generateSpeech && npcSpokenResponse != null)
     <br />
     <AmplitudePlot @ref=plot Analyser="bufferAnalyzer" />
 }
-else
+else if (pipelineComplete)
 {
     <button class="btn btn-success" @onclick=StopPlayingRecording>Continue</button>
 }
