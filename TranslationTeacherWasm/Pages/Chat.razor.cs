@@ -249,6 +249,7 @@ public partial class Chat
                 finally
                 {
                     pipelineComplete = true;
+                    StateHasChanged();
                 }
             });
             await recorder.AddOnStopEventListenerAsync(stopEventListener);
