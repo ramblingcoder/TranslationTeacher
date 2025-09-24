@@ -137,6 +137,11 @@ public partial class Chat
             {
                 try
                 {
+                    spokenAudioTranscribed = "";
+                    userTranslatedToEnglish = "";
+                    responseText = "";
+                    npcTranslatedToLanguage = "";
+                    
                     MediaStreamTrack[] audioTracks = await mediaStream.GetAudioTracksAsync();
                     foreach (MediaStreamTrack track in audioTracks)
                     {
@@ -198,7 +203,8 @@ public partial class Chat
                                                                               You are responding to the user's message in the first person.
                                                                               Your response should be in english.
                                                                               Respond in a way that continues the conversation.
-                                                                              The user is learning english. Keep responses simple.
+                                                                              The user is learning another language. 
+                                                                              Keep responses simple.
                                                                               """
                         });
                     responseText = responseNpc.Content;
