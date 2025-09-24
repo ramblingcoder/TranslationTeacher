@@ -327,9 +327,11 @@ public partial class Chat
         {
             await audioSourceNode.StopAsync();
         }
-
-        await npcSpokenResponse.DisposeAsync();
-        npcSpokenResponse = null;
+        if (npcSpokenResponse != null)
+        {
+            await npcSpokenResponse.DisposeAsync();
+            npcSpokenResponse = null;
+        }
     }
 
     public async ValueTask DisposeAsync()

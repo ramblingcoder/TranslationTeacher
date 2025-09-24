@@ -84,10 +84,6 @@ else if (audioBuffer is null)
     </svg>
     <AmplitudePlot Analyser="liveAnalyzer" Color="#F00" />
 }
-else if (!generateSpeech)
-{
-    <button class="btn btn-success" @onclick=StopPlayingRecording>Continue</button>
-}
 else if (generateSpeech && npcSpokenResponse != null)
 {   
     <svg class="bi" viewBox="0 0 16 16" height="60">
@@ -101,4 +97,8 @@ else if (generateSpeech && npcSpokenResponse != null)
     </svg>
     <br />
     <AmplitudePlot @ref=plot Analyser="bufferAnalyzer" />
+}
+else
+{
+    <button class="btn btn-success" @onclick=StopPlayingRecording>Continue</button>
 }
