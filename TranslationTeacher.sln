@@ -6,6 +6,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		_run.bat = _run.bat
 		_update_repo.bat = _update_repo.bat
 		readme.md = readme.md
+		_shutdown.bat = _shutdown.bat
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TranslationTeacherWasm", "TranslationTeacherWasm\TranslationTeacherWasm.csproj", "{1AA40B0F-71C0-42FD-AB56-583D8AB8EF99}"

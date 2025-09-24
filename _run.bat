@@ -1,1 +1,3 @@
-docker compose up --build
+docker compose up --build -d
+
+explorer "http://127.0.0.1:8083"
