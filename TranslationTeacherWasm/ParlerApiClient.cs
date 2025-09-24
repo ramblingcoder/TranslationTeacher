@@ -7,11 +7,13 @@ public class ParlerApiClient
 {    
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
+    private readonly TimeSpan Timeout;
 
-    public ParlerApiClient(string baseUrl)
+    public ParlerApiClient(string baseUrl, TimeSpan timeout)
     {
         _httpClient = new HttpClient();
         _baseUrl = baseUrl.TrimEnd('/');
+        _httpClient.Timeout = timeout;
     }
 
     public async Task<byte[]> TextToSpeechAsync(string text, string speaker = null)

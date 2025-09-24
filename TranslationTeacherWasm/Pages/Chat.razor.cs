@@ -28,6 +28,7 @@ public partial class Chat
     private string npcTranslatedToLanguage;
     private string responseText = null;
     private string selectedLanguage = "es,spanish";
+    private bool generateSpeech = true;
     private AudioBuffer npcSpokenResponse;
     private ChatHistory ChatHistory = new ChatHistory();
     private AudioBufferSourceNode currentAudioBufferNode = default!;
@@ -134,98 +135,109 @@ public partial class Chat
             EventListener<Event> stopEventListener = default!;
             stopEventListener = await EventListener<Event>.CreateAsync(JSRuntime, async _ =>
             {
-                MediaStreamTrack[] audioTracks = await mediaStream.GetAudioTracksAsync();
-                foreach (MediaStreamTrack track in audioTracks)
+                try
                 {
-                    await track.StopAsync();
-                    await track.DisposeAsync();
-                }
-
-                await recorder.RemoveOnStopEventListenerAsync(stopEventListener);
-                await stopEventListener.DisposeAsync();
-
-                await recorder.RemoveOnDataAvailableEventListenerAsync(dataAvailableEventListener);
-                await dataAvailableEventListener.DisposeAsync();
-                await recorder.DisposeAsync();
-
-                await using Blob combinedBlob = await Blob.CreateAsync(JSRuntime, [.. blobsRecorded], 
-                    new() { Type = await blobsRecorded.First().GetTypeAsync() });
-
-                foreach (Blob blob in blobsRecorded)
-                {
-                    await blob.DisposeAsync();
-                }
-
-                spokenAudio = await combinedBlob.ArrayBufferAsync();
-                audioBuffer = await context.DecodeAudioDataAsync(spokenAudio);
-                
-                status = "Transcribing...";
-                
-                StateHasChanged();
-
-                var transcription = (await WhisperApiClient.TranscribeAsync(
-                    spokenAudio, language: selectedLanguage.Substring(0, 2), output: "json"));
-                spokenAudioTranscribed = JsonSerializer.Deserialize<TranscriptionResult>(transcription).Text;
-
-                status = "Translating...";
-                
-                StateHasChanged();
-
-                var responseTranslation = await TranslatorChatCompletionService
-                    .GetChatMessageContentAsync(
-                        $"""
-                         Analyze the following {selectedLanguage.Substring(3)} segment surrounded in triple backticks and generate a single refined english translation. Only output the refined translation, do not explain.
-                         The {selectedLanguage.Substring(3)} segment:
-                         ```{spokenAudioTranscribed}```
-                         """);
-                userTranslatedToEnglish = responseTranslation.Content;
-                
-                status = "Thinking...";
-                
-                StateHasChanged();
-                
-                ChatHistory.AddUserMessage(userTranslatedToEnglish);
-
-                var responseNpc = await NpcChatCompletionService
-                    .GetChatMessageContentAsync(ChatHistory, new OpenAIPromptExecutionSettings()
+                    MediaStreamTrack[] audioTracks = await mediaStream.GetAudioTracksAsync();
+                    foreach (MediaStreamTrack track in audioTracks)
                     {
-                        ChatSystemPrompt = Configuration["npcPrompt"] ?? $"""
-                                                                          /no_think
-                                                                          You are a woman that works in a library. You are an expert librarian.
-                                                                          You are responding to the user's message in the first person.
-                                                                          Your response should be in english.
-                                                                          Respond in a way that continues the conversation.
-                                                                          The user is learning english. Keep responses simple.
-                                                                          """
-                    });
-                responseText = responseNpc.Content;
-                responseText = responseText.Replace("<think>", "").Replace("</think>", "");
-                ChatHistory.AddAssistantMessage(responseText);
-                
-                status = "Translating Response...";
-                
-                StateHasChanged();
-                
-                var responseTranslationNPC = await TranslatorChatCompletionService
-                    .GetChatMessageContentAsync(
-                        $"""
-                         Analyze the following english segment surrounded in triple backticks and generate a single refined {selectedLanguage.Substring(3)} translation. Only output the refined translation, do not explain.
-                         The english segment:
-                         ```{responseText}```
-                         """);
-                npcTranslatedToLanguage = responseTranslationNPC.Content;
-                
-                status = "Generating Speech...";
-                
-                StateHasChanged();
+                        await track.StopAsync();
+                        await track.DisposeAsync();
+                    }
 
-                var responseBytes = await ParlerApiClient.TextToSpeechAsync(npcTranslatedToLanguage, Configuration["npcVoice"] ?? "A female speaker delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speaker's voice sounding clear and very close up.");
-                npcSpokenResponse = await context.DecodeAudioDataAsync(responseBytes);
-                await PlayResponse();
-                
-                status = "Complete";
-                
-                StateHasChanged();
+                    await recorder.RemoveOnStopEventListenerAsync(stopEventListener);
+                    await stopEventListener.DisposeAsync();
+
+                    await recorder.RemoveOnDataAvailableEventListenerAsync(dataAvailableEventListener);
+                    await dataAvailableEventListener.DisposeAsync();
+                    await recorder.DisposeAsync();
+
+                    await using Blob combinedBlob = await Blob.CreateAsync(JSRuntime, [.. blobsRecorded],
+                        new() { Type = await blobsRecorded.First().GetTypeAsync() });
+
+                    foreach (Blob blob in blobsRecorded)
+                    {
+                        await blob.DisposeAsync();
+                    }
+
+                    spokenAudio = await combinedBlob.ArrayBufferAsync();
+                    audioBuffer = await context.DecodeAudioDataAsync(spokenAudio);
+
+                    status = "Transcribing...";
+
+                    StateHasChanged();
+
+                    var transcription = (await WhisperApiClient.TranscribeAsync(
+                        spokenAudio, language: selectedLanguage.Substring(0, 2), output: "json"));
+                    spokenAudioTranscribed = JsonSerializer.Deserialize<TranscriptionResult>(transcription).Text;
+
+                    status = "Translating...";
+
+                    StateHasChanged();
+
+                    var responseTranslation = await TranslatorChatCompletionService
+                        .GetChatMessageContentAsync(
+                            $"""
+                             Analyze the following {selectedLanguage.Substring(3)} segment surrounded in triple backticks and generate a single refined english translation. Only output the refined translation, do not explain.
+                             The {selectedLanguage.Substring(3)} segment:
+                             ```{spokenAudioTranscribed}```
+                             """);
+                    userTranslatedToEnglish = responseTranslation.Content;
+
+                    status = "Thinking...";
+
+                    StateHasChanged();
+
+                    ChatHistory.AddUserMessage(userTranslatedToEnglish);
+
+                    var responseNpc = await NpcChatCompletionService
+                        .GetChatMessageContentAsync(ChatHistory, new OpenAIPromptExecutionSettings()
+                        {
+                            ChatSystemPrompt = Configuration["npcPrompt"] ?? $"""
+                                                                              /no_think
+                                                                              You are a woman that works in a library. You are an expert librarian.
+                                                                              You are responding to the user's message in the first person.
+                                                                              Your response should be in english.
+                                                                              Respond in a way that continues the conversation.
+                                                                              The user is learning english. Keep responses simple.
+                                                                              """
+                        });
+                    responseText = responseNpc.Content;
+                    responseText = responseText.Replace("<think>", "").Replace("</think>", "");
+                    ChatHistory.AddAssistantMessage(responseText);
+
+                    status = "Translating Response...";
+
+                    StateHasChanged();
+
+                    var responseTranslationNPC = await TranslatorChatCompletionService
+                        .GetChatMessageContentAsync(
+                            $"""
+                             Analyze the following english segment surrounded in triple backticks and generate a single refined {selectedLanguage.Substring(3)} translation. Only output the refined translation, do not explain.
+                             The english segment:
+                             ```{responseText}```
+                             """);
+                    npcTranslatedToLanguage = responseTranslationNPC.Content;
+
+                    if (generateSpeech)
+                    {
+
+                        status = "Generating Speech...";
+
+                        StateHasChanged();
+
+                        var responseBytes = await ParlerApiClient.TextToSpeechAsync(npcTranslatedToLanguage, Configuration["npcVoice"] ?? "A female speaker delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speaker's voice sounding clear and very close up.");
+                        npcSpokenResponse = await context.DecodeAudioDataAsync(responseBytes);
+                        await PlayResponse();
+                    }
+
+                    status = "Complete";
+
+                    StateHasChanged();
+                }
+                catch (Exception e)
+                {
+                    error = e.ToString();
+                }
             });
             await recorder.AddOnStopEventListenerAsync(stopEventListener);
 

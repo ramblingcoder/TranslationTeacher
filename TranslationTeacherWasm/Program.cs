@@ -29,7 +29,7 @@ public class Program
 
         // Load Whisper API URL from configuration
         builder.Services.AddScoped<WhisperApiClient>(sp => new WhisperApiClient(builder.Configuration["WhisperApiUrl"] ?? "http://localhost:9000", null));
-        builder.Services.AddScoped<ParlerApiClient>(sp => new ParlerApiClient(builder.Configuration["ParlerApiUrl"] ?? "http://localhost:8000"));
+        builder.Services.AddScoped<ParlerApiClient>(sp => new ParlerApiClient(builder.Configuration["ParlerApiUrl"] ?? "http://localhost:8000", TimeSpan.FromMinutes(5)));
         
         builder.Services.AddKeyedScoped<IChatCompletionService>("npc",(sp,_) => 
             new OpenAIChatCompletionService("npc",  new Uri(builder.Configuration["NpcApiUrl"] ?? "http://localhost:8082")));

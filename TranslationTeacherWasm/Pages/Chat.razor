@@ -34,6 +34,10 @@
 
 <br/>
 
+<input type="checkbox" id="generateSpeech" @bind="generateSpeech" />
+<label for="generateSpeech">Generate Speech</label>
+<br/>
+
 @if (error is not null)
 {
     <code>@error</code>
@@ -80,8 +84,12 @@ else if (audioBuffer is null)
     </svg>
     <AmplitudePlot Analyser="liveAnalyzer" Color="#F00" />
 }
-else if (npcSpokenResponse != null)
+else if (!generateSpeech)
 {
+    <button class="btn btn-success" @onclick=StopPlayingRecording>Continue</button>
+}
+else if (generateSpeech && npcSpokenResponse != null)
+{   
     <svg class="bi" viewBox="0 0 16 16" height="60">
         <g @onclick="StopPlayingRecording" style="cursor:pointer">
             <title>
